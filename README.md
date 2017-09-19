@@ -3,9 +3,16 @@ Scripts
 
 This repository contains some useful scripts for interaction with Joe Sandbox.
 
-The scripts make use of [`jbxapi.py`][jbxapi], a lightweight module to interact with the API. Install it by copying it to your current working directory or use pip for installation:
+ * jbxbalancer.py : Submit samples to multiple Joe Sandbox instances
+                    choosing the one with the shortest queue.
+ * jbxmail.py :     Download files from an e-mail account and analyze attachements of
+                    unread mails.
+ * extractsigs.py : Extract the behavior signatures from downloaded XML reports.
+ * extractscore.py : Extract the score from downloaded XML reports.
 
-    pip install git+https://github.com/joesecurity/joesandboxcloudapi@v1.0.0#egg=jbxapi
+Some of the scripts depend on [`jbxapi.py`][jbxapi], a lightweight module for interaction with Joe Sandbox. Install it by copying it to your current working directory or use pip for installation:
+
+    pip install git+https://github.com/joesecurity/joesandboxcloudapi@v2#egg=jbxapi
 
  [jbxapi]: https://github.com/joesecurity/joesandboxcloudapi
 
@@ -30,3 +37,18 @@ follows:
     optional arguments:
       -h, --help         show this help message and exit
       --comment COMMENT
+
+`jbxmail.py`
+------------
+
+`extractsigs.py`
+----------------
+
+   Usage: ./extractsigs dir_to_search
+
+`extractscore.py`
+-----------------
+
+   Usage: ./extractscore dir_to_search
+
+
