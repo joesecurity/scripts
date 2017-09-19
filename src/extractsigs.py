@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 ####
 #
 # JOE SANDBOX EXTRACT SCRIPT
