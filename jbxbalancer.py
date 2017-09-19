@@ -12,9 +12,9 @@ import argparse
 
 # Specify the urls and api keys to use for load-balancing.
 SERVERS = [
-    ("http://127.0.0.1/joesandbox/index.php",        "YOUR_API_KEY"),
-    ("http://joe1.example.net/joesandbox/index.php", "YOUR_API_KEY"),
-    ("http://joe2.example.net/joesandbox/index.php", "YOUR_API_KEY"),
+    ("http://127.0.0.1/joesandbox/index.php/api",        "YOUR_API_KEY"),
+    ("http://joe1.example.net/joesandbox/index.php/api", "YOUR_API_KEY"),
+    ("http://joe2.example.net/joesandbox/index.php/api", "YOUR_API_KEY"),
 ]
 
 def main(args):
@@ -40,8 +40,8 @@ def main(args):
         try:
             joe = next_joe(joes)
             with open(path, "rb") as f:
-                webids = joe.submit_sample(f, params={"comments": args.comment})
-            print("Submitted '{0}' with webid(s): {1}".format(name, ",".join(webids)))
+                data = joe.submit_sample(f, params={"comments": args.comment})
+            print("Submitted '{0}' with webid(s): {1}".format(name, ",".join(data["webids"])))
         except Exception as e:
             exceptions.append((name, e))
 
@@ -81,7 +81,7 @@ class API1to2(object):
         module.ServerOfflineError = cls.ServerOfflineError
 
     def __init__(self, apikey, apiurl):
-        apiurl = apiurl.rstrip("/") + "/api/"
+        apiurl = apiurl.rstrip("/") + "/"
         self._wrapped = jbxapi.joe_api(apikey=apikey, apiurl=apiurl)
 
     def server_info(self):
@@ -97,7 +97,7 @@ class API1to2(object):
     def submit_sample(self, file, params={}):
         response = self._wrapped.analyze(file, "", comments=params["comments"])
         try:
-            return [str(webid) for webid in response["webids"]]
+            return {"webids": [str(webid) for webid in response["webids"]]}
         except TypeError:
             self._raise_exception(response)
 
