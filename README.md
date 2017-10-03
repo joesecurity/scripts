@@ -66,7 +66,7 @@ follows:
 **Requirements:** Python 2.7 or 3.3, [`jbxapi.py`][jbxapi]
 
 Use this script to analyse e-mail attachments of an IMAP mailbox. Simply adapt the following variables:
-`SERVER`, `USERNAME`, `PASSWORD`, `API_URL`, `API_KEY`, `ACCEPT_TAC` and modify the submission parameters to your likings.
+`SERVER`, `USERNAME`, `PASSWORD`, `API_URL`, `API_KEY`, `ACCEPT_TAC` and modify the submission parameters to your liking.
 
 Then call it as follows:
 

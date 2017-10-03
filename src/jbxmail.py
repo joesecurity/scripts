@@ -10,7 +10,7 @@ import email
 
 ##########################
 # SETTINGS               #
-########################## 
+##########################
 
 # imap settings
 SERVER="mail.example.net"
@@ -19,7 +19,7 @@ PASSWORD="password"
 FOLDER="INBOX"
 
 # API URL.
-API_URL  = "https://jbxcloud.joesecurity.org/api" 
+API_URL  = "https://jbxcloud.joesecurity.org/api"
 # for on-premise installations, use the following
 # API_URL = "http://" + webserveraddress + "/joesandbox/index.php/api"
 
@@ -31,49 +31,55 @@ API_KEY = ""
 # https://jbxcloud.joesecurity.org/resources/termsandconditions.pdf
 ACCEPT_TAC  = False
 
-## submission parameters
-submission_parameters = {
-    # enable internet access during analysis
-    'internet-access': True,
-    # lookup samples in the report cache
-    'report-cache': True,
+# default submission parameters
+# when specifying None, the server decides
+submission_defaults = {
+    # system selection, set to None for automatic selection
+    # 'systems': ('w7', 'w7x64'),
+    'systems': None,
     # comment for an analysis
-    'comments': "Submitted by jbxmail.py",
+    'comments': None,
     # maximum analysis time
-    'analysis-time': 120,
+    'analysis-time': None,
     # password for decrypting office files
-    'office-files-password': "",
+    'office-files-password': None,
+    # country for routing internet through
+    'localized-internet-country': None,
+    # tags
+    'tags': None,
+    # enable internet access during analysis
+    'internet-access': None,
+    # lookup samples in the report cache
+    'report-cache': None,
     # hybrid code analysis
-    'hybrid-code-analysis': False,
+    'hybrid-code-analysis': None,
     # hybrid decompilation
-    'hybrid-decompilation': False,
+    'hybrid-decompilation': None,
     # adaptive internet simulation
-    'adaptive-internet-simulation': False,
+    'adaptive-internet-simulation': None,
     # inspect ssl traffic
-    'ssl-inspection': False,
-    # instrumatation of vba scripts
-    'vba-instrumentation': False,
+    'ssl-inspection': None,
+    # instrumentation of vba scripts
+    'vba-instrumentation': None,
     # automatically re-submit dropped PE files if they were not executed by the sample
-    'autosubmit-dropped': False,
+    'autosubmit-dropped': None,
     # send an e-mail upon completion of the analysis
-    'email-notification': False,
-
-    ## ON PREMISE INSTALLATIONS EXCLUSIVE PARAMETERS
-
-    # priority of submissions (disabled on Cloud)
-    'priority': 2,
+    'email-notification': None,
 
     ## JOE SANDBOX CLOUD EXCLUSIVE PARAMETERS
 
     # filter benign samples
-    'smart-filter': False,
+    'smart-filter': None,
     # select hyper mode for a faster but less thorough analysis
-    'hyper-mode': False,
+    'hyper-mode': None,
     # export the report to Joe Sandbox View
-    'export-to-jbxview': False,
+    'export-to-jbxview': None,
+
+    ## ON PREMISE EXCLUSIVE PARAMETERS
+
+    # priority of submissions
+    'priority': None,
 }
-
-
 
 
 def main():
@@ -96,7 +102,7 @@ def main():
                 yield msg_id, name, content
 
     count = 0
-    for msg_id, name, content in attachements(): 
+    for msg_id, name, content in attachements():
         try:
             data = submit_sample(joe, name, content)
         except:
@@ -132,13 +138,13 @@ def extract_attachements(msg):
             continue
 
         yield filename, sample
-        
+
 
 def submit_sample(joe, name, content):
     fp = io.BytesIO(content)
     fp.name = name
 
-    return joe.submit_sample(fp, parameters=submission_parameters)
+    return joe.submit_sample(fp, params=submission_defaults)
 
 def fetch_message_ids(imap):
     ret, data = imap.select(FOLDER)
