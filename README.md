@@ -49,16 +49,18 @@ To use the scripts, specify the servers by changing the `SERVERS` variable. Then
 follows:
 
     > ./jbxbalancer.py --help
-    usage: jbxbalancer.py [-h] [--comment COMMENT] PATH
+    usage: jbxbalancer.py [-h] [--comment COMMENT] [--outdir OUTDIR] PATH
 
     Submit samples to the server with the shortest queue.
 
     positional arguments:
-      PATH               Path to file or directory.
+      PATH                  Path to file or directory.
 
     optional arguments:
-      -h, --help         show this help message and exit
+      -h, --help            show this help message and exit
       --comment COMMENT
+      --outdir OUTDIR, -o OUTDIR
+                            Directory for saving the xml reports.
 
 `jbxmail.py`
 ------------
