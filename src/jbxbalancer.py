@@ -34,9 +34,16 @@ def main(args):
     # command line interface
     parser = argparse.ArgumentParser(description='Submit samples, directories or URLs to the server with the shortest queue. Uses jbxapi.py. Please set your submission options there.')
     parser.add_argument('path_or_url', metavar="PATH_OR_URL", help='Path to file or directory, or URL.')
-    parser.add_argument("--type", default="file", help='one of "file", "url", "sample-url" (optional, defaults to "file")') 
-    parser.add_argument("--comment", default=None, help='comment (optional')
-    parser.add_argument("--waituntilfinished", "-wait", help='Set this option to True to let the script wait for the end of the analysis')
+    
+    group = parser.add_argument_group("submission mode")
+    submission_mode_parser = group.add_mutually_exclusive_group(required=False)
+    submission_mode_parser.add_argument('--url', dest="url_mode", action="store_true",
+            help="Analyse the given URL instead of a sample.")
+    submission_mode_parser.add_argument('--sample-url', dest="sample_url_mode", action="store_true",
+            help="Download the sample from the given url.")
+    
+    parser.add_argument("--comments", default=None, help='comments (optional')
+    parser.add_argument("--wait-for-results", "-wait", action="store_true", help='Set this option to let the script wait for the end of the analysis')
     parser.add_argument("--outdir", "-o", help='Directory for saving the xml reports (optional)')
     args = parser.parse_args()
 
@@ -47,54 +54,21 @@ def main(args):
     # prepare servers
     joes = [jbxapi.JoeSandbox(apiurl=url, apikey=key) for url, key in SERVERS]
 
-    # submit all samples
-    exceptions = []
     job_queues = {joe: [] for joe in joes}
     
-    params={"comments": args.comment}
+    params={"comments": args.comments}
     
-    if args.type == 'url' or args.type == 'sample-url':
-        try:
-            joe = next_joe(joes)
-            if args.type == 'url':
-                data = joe.submit_url(args.path_or_url, params=params)
-            else:
-                data = joe.submit_sample_url(args.path_or_url, params=params)
-            print("Submitted '{0}' with webid(s): {1} to server: {2}".format(args.path_or_url, ",".join(data["webids"]),joe.apiurl))          
-            for webid in data["webids"]:
-                job_queues[joe].append(Submission(args.path_or_url, webid))
-        except Exception as e:
-            print("Submitting '{0}' failed: {1}".format(args.path_or_url, e), file=sys.stderr)          
+    if args.url_mode or args.sample_url_mode:
+        submit_url(args, joes, job_queues, params)
     else:
-        # if given a directory, collect all files
-        if os.path.isdir(args.path_or_url):
-            paths = [os.path.join(args.path_or_url, name) for name in os.listdir(args.path_or_url)]
-        else:
-            paths = [args.path_or_url]
-    
-        for path in paths:
-            name = os.path.basename(path)
-            try:
-                joe = next_joe(joes)
-                with open(path, "rb") as f:
-                    data = joe.submit_sample(f, params=params)
-
-                print("Submitted '{0}' with webid(s): {1} to server: {2}".format(args.path_or_url, ",".join(data["webids"]),joe.apiurl))   
-                for webid in data["webids"]:
-                    job_queues[joe].append(Submission(name, webid))
-            except Exception as e:
-                exceptions.append((name, e))
-
-    # print intermediate status
-    for name, e in exceptions:
-        print("Submitting '{0}' failed: {1}".format(name, e), file=sys.stderr)
+        submit_sample(args, joes, job_queues, params)
 
     def job_count():
         return sum(len(jobs) for jobs in job_queues.values())
 
     print("Submitted {0} sample(s).".format(job_count()))
     
-    if not args.waituntilfinished:
+    if not args.wait_for_results:
         return
     
     print("Waiting for the analyses to finish ...".format(job_count()))
@@ -121,7 +95,45 @@ def main(args):
                 print_progress(job_count())
                 time.sleep(.2)
 
+def submit_url(args, joes, job_queues, params):
+    try:
+        joe = next_joe(joes)
+        if args.url_mode:
+            data = joe.submit_url(args.path_or_url, params=params)
+        else:
+            data = joe.submit_sample_url(args.path_or_url, params=params)
+        print("Submitted '{0}' with webid(s): {1} to server: {2}".format(args.path_or_url, ",".join(data["webids"]),joe.apiurl))          
+        for webid in data["webids"]:
+            job_queues[joe].append(Submission(args.path_or_url, webid))
+    except Exception as e:
+        print("Submitting '{0}' failed: {1}".format(args.path_or_url, e), file=sys.stderr)          
+                
+def submit_sample(args, joes, job_queues, params):               
+    # if given a directory, collect all files
+    if os.path.isdir(args.path_or_url):
+        paths = [os.path.join(args.path_or_url, name) for name in os.listdir(args.path_or_url)]
+    else:
+        paths = [args.path_or_url]
 
+    exceptions = []		
+		
+    for path in paths:
+        name = os.path.basename(path)
+        try:
+            joe = next_joe(joes)
+            with open(path, "rb") as f:
+                data = joe.submit_sample(f, params=params)
+
+            print("Submitted '{0}' with webid(s): {1} to server: {2}".format(args.path_or_url, ",".join(data["webids"]),joe.apiurl))   
+            for webid in data["webids"]:
+                job_queues[joe].append(Submission(name, webid))
+        except Exception as e:
+            exceptions.append((name, e))
+
+    # print intermediate status
+    for name, e in exceptions:
+        print("Submitting '{0}' failed: {1}".format(name, e), file=sys.stderr)
+            
 def handle_finished_analysis(joe, submission, info, outdir):
     # download best run
     filename, data = joe.download(submission.webid, "xml")
