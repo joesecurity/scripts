@@ -52,7 +52,9 @@ Then use it as follows:
     usage: jbxbalancer-oem.py [-h] [--url | --sample-url] [--comments COMMENTS]
                               [--wait-for-results] [--outdir OUTDIR]
                               PATH_OR_URL
-    Submit samples to the server with the shortest queue.
+                              
+    Submit samples, directories or URLs to the server with the shortest queue.
+    Uses jbxapi.py. Please set your submission options there.
 
     positional arguments:
       PATH_OR_URL           Path to file or directory.
