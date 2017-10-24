@@ -49,7 +49,9 @@ To use the scripts, specify the servers by changing the `SERVERS` variable. Plea
 Then use it as follows:
 
     > ./jbxbalancer.py --help
-    usage: jbxbalancer.py [-h] [--comment COMMENT] [--outdir OUTDIR] PATH
+    usage: jbxbalancer-oem.py [-h] [--type TYPE] [--comment COMMENT] 
+                              [--waituntilfinished WAITUNTILFINISHED] [--outdir OUTDIR] 
+                              PATH_OR_URL
 
     Submit samples to the server with the shortest queue.
 
