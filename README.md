@@ -45,8 +45,8 @@ Use this script to submit samples to one of multiple Joe Sandbox installations.
 Before submitting a sample the script queries the queue length and submits the sample
 to the server with the shortest queue.
 
-To use the scripts, specify the servers by changing the `SERVERS` variable. Then use it as
-follows:
+To use the scripts, specify the servers by changing the `SERVERS` variable. Please also set your submission defaults in jbxapi.py. 
+Then use it as follows:
 
     > ./jbxbalancer.py --help
     usage: jbxbalancer.py [-h] [--comment COMMENT] [--outdir OUTDIR] PATH
@@ -58,9 +58,14 @@ follows:
 
     optional arguments:
       -h, --help            show this help message and exit
+      --type TYPE           one of "file", "url", "sample-url" (optional, defaults
+                            to "file")
       --comment COMMENT
+      --waituntilfinished WAITUNTILFINISHED, -wait WAITUNTILFINISHED
+                            Set this option to True to let the script wait for the
+                            end of the analysis      
       --outdir OUTDIR, -o OUTDIR
-                            Directory for saving the xml reports.
+                            Directory for saving the xml reports (requires waituntilfinished to be set to true).
 
 `jbxmail.py`
 ------------
