@@ -56,7 +56,7 @@ Then use it as follows:
     Submit samples to the server with the shortest queue.
 
     positional arguments:
-      PATH                  Path to file or directory.
+      PATH_OR_URL           Path to file or directory.
 
     optional arguments:
       -h, --help            show this help message and exit
