@@ -49,10 +49,9 @@ To use the scripts, specify the servers by changing the `SERVERS` variable. Plea
 Then use it as follows:
 
     > ./jbxbalancer.py --help
-    usage: jbxbalancer-oem.py [-h] [--type TYPE] [--comment COMMENT] 
-                              [--waituntilfinished WAITUNTILFINISHED] [--outdir OUTDIR] 
+    usage: jbxbalancer-oem.py [-h] [--url | --sample-url] [--comments COMMENTS]
+                              [--wait-for-results] [--outdir OUTDIR]
                               PATH_OR_URL
-
     Submit samples to the server with the shortest queue.
 
     positional arguments:
@@ -60,14 +59,16 @@ Then use it as follows:
 
     optional arguments:
       -h, --help            show this help message and exit
-      --type TYPE           one of "file", "url", "sample-url" (optional, defaults
-                            to "file")
-      --comment COMMENT
-      --waituntilfinished WAITUNTILFINISHED, -wait WAITUNTILFINISHED
-                            Set this option to True to let the script wait for the
-                            end of the analysis      
+      --comments COMMENTS   comments (optional
+      --wait-for-results, -wait
+                            Set this option to let the script wait for the end of
+                            the analysis
       --outdir OUTDIR, -o OUTDIR
-                            Directory for saving the xml reports (requires waituntilfinished to be set to true).
+                            Directory for saving the xml reports (optional)
+
+    submission mode:
+      --url                 Analyse the given URL instead of a sample.
+      --sample-url          Download the sample from the given url.
 
 `jbxmail.py`
 ------------
