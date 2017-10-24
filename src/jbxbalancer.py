@@ -33,11 +33,11 @@ Submission = collections.namedtuple('Submission', ['name', 'webid'])
 def main(args):
     # command line interface
     parser = argparse.ArgumentParser(description='Submit samples, directories or URLs to the server with the shortest queue. Uses jbxapi.py. Please set your submission options there.')
-    parser.add_argument('path_or_url', metavar="PATH", help='Path to file or directory, or URL.')
+    parser.add_argument('path_or_url', metavar="PATH_OR_URL", help='Path to file or directory, or URL.')
     parser.add_argument("--type", default="file", help='one of "file", "url", "sample-url" (optional, defaults to "file")') 
     parser.add_argument("--comment", default=None, help='comment (optional')
     parser.add_argument("--waituntilfinished", "-wait", help='Set this option to True to let the script wait for the end of the analysis')
-    parser.add_argument("--outdir", "-o", help='Directory for saving the xml reports (requires -wait to be set, optional)')
+    parser.add_argument("--outdir", "-o", help='Directory for saving the xml reports (optional)')
     args = parser.parse_args()
 
     if args.outdir is not None:
@@ -79,7 +79,7 @@ def main(args):
                 with open(path, "rb") as f:
                     data = joe.submit_sample(f, params=params)
 
-                print("Submitted '{0}' with webid(s): {1}".format(name, ",".join(data["webids"])))
+                print("Submitted '{0}' with webid(s): {1} to server: {2}".format(args.path_or_url, ",".join(data["webids"]),joe.apiurl))   
                 for webid in data["webids"]:
                     job_queues[joe].append(Submission(name, webid))
             except Exception as e:
