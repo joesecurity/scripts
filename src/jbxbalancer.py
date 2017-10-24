@@ -32,21 +32,17 @@ Submission = collections.namedtuple('Submission', ['name', 'webid'])
 
 def main(args):
     # command line interface
-    parser = argparse.ArgumentParser(description='Submit samples to the server with the shortest queue.')
-    parser.add_argument('file_or_dir', metavar="PATH", help='Path to file or directory.')
-    parser.add_argument("--comment", default=None)
-    parser.add_argument("--outdir", "-o", help='Directory for saving the xml reports.')
+    parser = argparse.ArgumentParser(description='Submit samples, directories or URLs to the server with the shortest queue. Uses jbxapi.py. Please set your submission options there.')
+    parser.add_argument('path_or_url', metavar="PATH", help='Path to file or directory, or URL.')
+    parser.add_argument("--type", default="file", help='one of "file", "url", "sample-url" (optional, defaults to "file")') 
+    parser.add_argument("--comment", default=None, help='comment (optional')
+    parser.add_argument("--waituntilfinished", "-wait", help='Set this option to True to let the script wait for the end of the analysis')
+    parser.add_argument("--outdir", "-o", help='Directory for saving the xml reports (requires -wait to be set, optional)')
     args = parser.parse_args()
 
     if args.outdir is not None:
         if not os.path.isdir(args.outdir):
             sys.exit("Output directory does not exist")
-
-    # if given a directory, collect all files
-    if os.path.isdir(args.file_or_dir):
-        paths = [os.path.join(args.file_or_dir, name) for name in os.listdir(args.file_or_dir)]
-    else:
-        paths = [args.file_or_dir]
 
     # prepare servers
     joes = [jbxapi.JoeSandbox(apiurl=url, apikey=key) for url, key in SERVERS]
@@ -54,18 +50,40 @@ def main(args):
     # submit all samples
     exceptions = []
     job_queues = {joe: [] for joe in joes}
-    for path in paths:
-        name = os.path.basename(path)
+    
+    params={"comments": args.comment}
+    
+    if args.type == 'url' or args.type == 'sample-url':
         try:
             joe = next_joe(joes)
-            with open(path, "rb") as f:
-                data = joe.submit_sample(f, params={"comments": args.comment})
-
-            print("Submitted '{0}' with webid(s): {1}".format(name, ",".join(data["webids"])))
+            if args.type == 'url':
+                data = joe.submit_url(args.path_or_url, params=params)
+            else:
+                data = joe.submit_sample_url(args.path_or_url, params=params)
+            print("Submitted '{0}' with webid(s): {1} to server: {2}".format(args.path_or_url, ",".join(data["webids"]),joe.apiurl))          
             for webid in data["webids"]:
-                job_queues[joe].append(Submission(name, webid))
+                job_queues[joe].append(Submission(args.path_or_url, webid))
         except Exception as e:
-            exceptions.append((name, e))
+            print("Submitting '{0}' failed: {1}".format(args.path_or_url, e), file=sys.stderr)          
+    else:
+        # if given a directory, collect all files
+        if os.path.isdir(args.path_or_url):
+            paths = [os.path.join(args.path_or_url, name) for name in os.listdir(args.path_or_url)]
+        else:
+            paths = [args.path_or_url]
+    
+        for path in paths:
+            name = os.path.basename(path)
+            try:
+                joe = next_joe(joes)
+                with open(path, "rb") as f:
+                    data = joe.submit_sample(f, params=params)
+
+                print("Submitted '{0}' with webid(s): {1}".format(name, ",".join(data["webids"])))
+                for webid in data["webids"]:
+                    job_queues[joe].append(Submission(name, webid))
+            except Exception as e:
+                exceptions.append((name, e))
 
     # print intermediate status
     for name, e in exceptions:
@@ -75,6 +93,10 @@ def main(args):
         return sum(len(jobs) for jobs in job_queues.values())
 
     print("Submitted {0} sample(s).".format(job_count()))
+    
+    if not args.waituntilfinished:
+        return
+    
     print("Waiting for the analyses to finish ...".format(job_count()))
 
     # download reports
