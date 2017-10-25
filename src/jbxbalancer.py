@@ -67,7 +67,7 @@ def main(args):
             joe = pick_best_joe(joes)
         except AllServersOfflineError as e:
             print("Failed to fetch any server: ", e , file=sys.stderr)
-    
+            break    
         if args.url_mode or args.sample_url_mode:
             success = submit_url(args, joe, job_queues, params)
         else:
@@ -77,6 +77,7 @@ def main(args):
             break
             
         joes.remove(joe)
+        print("Trying to submit to next server")
         
     if not joes and not success:
         print("No more servers to submit to, submission failed", file=sys.stderr)          
