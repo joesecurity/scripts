@@ -8,6 +8,7 @@ import argparse
 import time
 import errno
 import collections
+import random
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -32,7 +33,7 @@ Submission = collections.namedtuple('Submission', ['name', 'webid'])
 
 def main(args):
     # command line interface
-    parser = argparse.ArgumentParser(description='Submit samples, directories or URLs to the server with the shortest queue. Uses jbxapi.py. Please set your submission options there.')
+    parser = argparse.ArgumentParser(description='Submit samples, directories or URLs to the server with the shortest queue. If the submission fails, the next server is selected, until no servers are left. Uses jbxapi.py. Please set your submission options there.')
     parser.add_argument('path_or_url', metavar="PATH_OR_URL", help='Path to file or directory, or URL.')
 
     group = parser.add_argument_group("submission mode")
@@ -55,14 +56,32 @@ def main(args):
     joes = [jbxapi.JoeSandbox(apiurl=url, apikey=key) for url, key in SERVERS]
 
     job_queues = {joe: [] for joe in joes}
+    
+    params={"comments": args.comments}
+    
+    success=False
+    
+	# Try to submit to best server, if it fails continue until no server is left
+    while joes and not success:
+        try:
+            joe = pick_best_joe(joes)
+        except AllServersOfflineError as e:
+            print("Failed to fetch any server: ", e , file=sys.stderr)
+            break    
+        if args.url_mode or args.sample_url_mode:
+            success = submit_url(args, joe, job_queues, params)
+        else:
+            success = submit_sample(args, joe, job_queues, params)
 
-    params = {"comments": args.comments}
-
-    if args.url_mode or args.sample_url_mode:
-        submit_url(args, joes, job_queues, params)
-    else:
-        submit_sample(args, joes, job_queues, params)
-
+        if success:
+            break
+            
+        joes.remove(joe)
+        print("Trying to submit to next server")
+        
+    if not joes and not success:
+        print("No more servers to submit to, submission failed", file=sys.stderr)          
+        
     def job_count():
         return sum(len(jobs) for jobs in job_queues.values())
 
@@ -95,10 +114,13 @@ def main(args):
                 print_progress(job_count())
                 time.sleep(.2)
 
-
-def submit_url(args, joes, job_queues, params):
+def submit_url(args, joe, job_queues, params):
+    '''
+    Tries to commit a URL to the server joe
+    Returns true if it was successful, False otherwise
+    '''
+    
     try:
-        joe = next_joe(joes)
         if args.url_mode:
             data = joe.submit_url(args.path_or_url, params=params)
         else:
@@ -106,37 +128,41 @@ def submit_url(args, joes, job_queues, params):
         print("Submitted '{0}' with webid(s): {1} to server: {2}".format(args.path_or_url, ",".join(data["webids"]), joe.apiurl))
         for webid in data["webids"]:
             job_queues[joe].append(Submission(args.path_or_url, webid))
+        return True
     except Exception as e:
-        print("Submitting '{0}' failed: {1}".format(args.path_or_url, e), file=sys.stderr)
+        print("Submitting '{0}' failed: {1}".format(args.path_or_url, e))
+        return False
+                
+def submit_sample(args, joe, job_queues, params):               
+    '''
+    Tries to commit a sample or directory to the server joe
+    Returns true if at least one sample submission was successful, False otherwise
+    '''
 
-
-def submit_sample(args, joes, job_queues, params):
     # if given a directory, collect all files
     if os.path.isdir(args.path_or_url):
         paths = [os.path.join(args.path_or_url, name) for name in os.listdir(args.path_or_url)]
     else:
         paths = [args.path_or_url]
-
-    exceptions = []
-
+        
     for path in paths:
         name = os.path.basename(path)
         try:
-            joe = next_joe(joes)
             with open(path, "rb") as f:
                 data = joe.submit_sample(f, params=params)
 
             print("Submitted '{0}' with webid(s): {1} to server: {2}".format(args.path_or_url, ",".join(data["webids"]), joe.apiurl))
             for webid in data["webids"]:
-                job_queues[joe].append(Submission(name, webid))
+                job_queues[joe].append(Submission(name, webid))         
         except Exception as e:
-            exceptions.append((name, e))
-
-    # print intermediate status
-    for name, e in exceptions:
-        print("Submitting '{0}' failed: {1}".format(name, e), file=sys.stderr)
-
-
+            print("Submitting '{0}' failed: {1}".format(name, e), file=sys.stderr)
+        
+    # If at least one submission worked, return True
+    if job_queues[joe]:
+        return True
+    else:
+        return False
+            
 def handle_finished_analysis(joe, submission, info, outdir):
     # download best run
     filename, data = joe.download(submission.webid, "xml")
@@ -190,23 +216,34 @@ def print_progress(value):
 class AllServersOfflineError(Exception): pass
 
 
-def next_joe(joes):
+def pick_best_joe(joes):
     """
-    Figure out to which instance we should submit the next sample.
+    Picks the best server to submit to
+    The best server is the one with the lowest queuesize
+    If several servers have the same queuesize, a random one is returned
     """
-    queue_sizes = []
+    current_min = None
+    min_joes = []
     for joe in joes:
         try:
-            queue_sizes.append((joe.server_info()["queuesize"], joe))
+            queuesize = joe.server_info()["queuesize"]
+            if not current_min:
+                current_min = joe.server_info()["queuesize"]
+                min_joes.append(joe)
+            else:           
+                if queuesize < current_min:
+                    current_min = queuesize
+                    del min_joes[:]
+                    min_joes.append(joe)
+                elif queuesize == current_min:
+                    min_joes.append(joe)
         except jbxapi.ServerOfflineError:
             pass
 
-    try:
-        _, joe = min(queue_sizes, key=lambda x: x[0])
-    except ValueError:
+    if not min_joes:
         raise AllServersOfflineError("All servers are offline.")
 
-    return joe
+    return random.choice(min_joes)
 
 
 if __name__ == "__main__":

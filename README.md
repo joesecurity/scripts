@@ -44,6 +44,7 @@ All scripts in this repository are licensed under the [MIT license](LICENSE.txt)
 Use this script to submit samples to one of multiple Joe Sandbox installations.
 Before submitting a sample the script queries the queue length and submits the sample
 to the server with the shortest queue.
+If submission fails, the next best server is chosen, until no servers are left.
 
 To use the scripts, specify the servers by changing the `SERVERS` variable. Please also set your submission defaults in jbxapi.py. 
 Then use it as follows:
@@ -52,7 +53,9 @@ Then use it as follows:
     usage: jbxbalancer-oem.py [-h] [--url | --sample-url] [--comments COMMENTS]
                               [--wait-for-results] [--outdir OUTDIR]
                               PATH_OR_URL
-    Submit samples to the server with the shortest queue.
+                              
+    Submit samples, directories or URLs to the server with the shortest queue.
+    Uses jbxapi.py. Please set your submission options there.
 
     positional arguments:
       PATH_OR_URL           Path to file or directory.
