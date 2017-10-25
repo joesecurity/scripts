@@ -33,7 +33,7 @@ Submission = collections.namedtuple('Submission', ['name', 'webid'])
 
 def main(args):
     # command line interface
-    parser = argparse.ArgumentParser(description='Submit samples, directories or URLs to the server with the shortest queue. Uses jbxapi.py. Please set your submission options there.')
+    parser = argparse.ArgumentParser(description='Submit samples, directories or URLs to the server with the shortest queue. If the submission fails, the next server is selected, until no servers are left. Uses jbxapi.py. Please set your submission options there.')
     parser.add_argument('path_or_url', metavar="PATH_OR_URL", help='Path to file or directory, or URL.')
     
     group = parser.add_argument_group("submission mode")
