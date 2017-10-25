@@ -58,30 +58,74 @@ def main(args):
     job_queues = {joe: [] for joe in joes}
     
     params={"comments": args.comments}
-    
-    success=False
-    
-	# Try to submit to best server, if it fails continue until no server is left
-    while joes and not success:
-        try:
-            joe = pick_best_joe(joes)
-        except AllServersOfflineError as e:
-            print("Failed to fetch any server: ", e , file=sys.stderr)
-            break    
-        if args.url_mode or args.sample_url_mode:
-            success = submit_url(args, joe, job_queues, params)
-        else:
-            success = submit_sample(args, joe, job_queues, params)
 
-        if success:
-            break
+    if args.url_mode or args.sample_url_mode:
+    
+        success=False
+        
+        # Try to submit to best server, if it fails continue until no server is left
+        while joes and not success:
+            try:
+                joe = pick_best_joe(joes)
+            except AllServersOfflineError as e:
+                print("Failed to fetch any server: ", e , file=sys.stderr)
+                break    
+
+            success = submit_url(args, joe, job_queues, params)
+
+            if success:
+                break
+                
+            joes.remove(joe)
+            print("Trying to submit to next server")
             
-        joes.remove(joe)
-        print("Trying to submit to next server")
+        if not joes and not success:
+            print("No more servers to submit to, submission failed", file=sys.stderr)          
+    
+    # File or directory submission
+    else:
         
-    if not joes and not success:
-        print("No more servers to submit to, submission failed", file=sys.stderr)          
+        # if given a directory, collect all files
+        if os.path.isdir(args.path_or_url):
+            paths = [os.path.join(args.path_or_url, name) for name in os.listdir(args.path_or_url)]
+        else:
+            paths = [args.path_or_url]
         
+        for path in paths:
+        
+            success=False
+            joes_clone = list(joes)
+            
+            # Try to submit to best server, if it fails continue until no server is left
+            while joes and not success:
+                try:
+                    joe = pick_best_joe(joes_clone)
+                except AllServersOfflineError as e:
+                    print("Failed to fetch any server: ", e , file=sys.stderr)
+                    break    
+
+                name = os.path.basename(path)
+                try:
+                    with open(path, "rb") as f:
+                        data = joe.submit_sample(f, params=params)
+
+                    print("Submitted '{0}' with webid(s): {1} to server: {2}".format(name, ",".join(data["webids"]), joe.apiurl))
+                    for webid in data["webids"]:
+                        job_queues[joe].append(Submission(name, webid))         
+                    success = True
+                        
+                except Exception as e:
+                    print("Submitting '{0}' failed: {1}".format(name, e), file=sys.stderr)
+                    
+                if success:
+                    break
+                    
+                joes_clone.remove(joe)
+                print("Trying to submit to next server")
+                
+            if not joes_clone and not success:
+                print("No more servers to submit to, submission failed", file=sys.stderr)          
+            
     def job_count():
         return sum(len(jobs) for jobs in job_queues.values())
 
@@ -131,36 +175,6 @@ def submit_url(args, joe, job_queues, params):
         return True
     except Exception as e:
         print("Submitting '{0}' failed: {1}".format(args.path_or_url, e))
-        return False
-                
-def submit_sample(args, joe, job_queues, params):               
-    '''
-    Tries to commit a sample or directory to the server joe
-    Returns true if at least one sample submission was successful, False otherwise
-    '''
-
-    # if given a directory, collect all files
-    if os.path.isdir(args.path_or_url):
-        paths = [os.path.join(args.path_or_url, name) for name in os.listdir(args.path_or_url)]
-    else:
-        paths = [args.path_or_url]
-        
-    for path in paths:
-        name = os.path.basename(path)
-        try:
-            with open(path, "rb") as f:
-                data = joe.submit_sample(f, params=params)
-
-            print("Submitted '{0}' with webid(s): {1} to server: {2}".format(args.path_or_url, ",".join(data["webids"]), joe.apiurl))
-            for webid in data["webids"]:
-                job_queues[joe].append(Submission(name, webid))         
-        except Exception as e:
-            print("Submitting '{0}' failed: {1}".format(name, e), file=sys.stderr)
-        
-    # If at least one submission worked, return True
-    if job_queues[joe]:
-        return True
-    else:
         return False
             
 def handle_finished_analysis(joe, submission, info, outdir):
@@ -241,7 +255,7 @@ def pick_best_joe(joes):
             pass
 
     if not min_joes:
-        raise AllServersOfflineError("All servers are offline.")
+        raise AllServersOfflineError("All servers are offline or no more servers left.")
 
     return random.choice(min_joes)
 
