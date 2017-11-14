@@ -29,7 +29,7 @@ This repository contains some useful scripts for interaction with Joe Sandbox.
 
 Some of the scripts depend on [`jbxapi.py`][jbxapi], a lightweight module for interaction with Joe Sandbox. Install it by copying it to your current working directory or use pip for installation:
 
-    pip install git+https://github.com/joesecurity/joesandboxcloudapi@v2#egg=jbxapi
+    pip install jbxapi
 
 License
 -------
