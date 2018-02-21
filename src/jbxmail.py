@@ -38,7 +38,7 @@ submission_defaults = {
     # 'systems': ('w7', 'w7x64'),
     'systems': None,
     # comment for an analysis
-    'comments': None,
+    'comments': "Submitted by jbxmail.py",
     # maximum analysis time
     'analysis-time': None,
     # password for decrypting office files
@@ -94,15 +94,15 @@ def main():
     msg_ids = fetch_message_ids(imap)
     print("Found {0} unread mail(s).".format(len(msg_ids)))
 
-    # extract attachements
-    def attachements():
+    # extract attachments
+    def attachments():
         for msg_id in msg_ids:
             message = read_message(imap, msg_id)
-            for name, content in extract_attachements(message):
+            for name, content in extract_attachments(message):
                 yield msg_id, name, content
 
     count = 0
-    for msg_id, name, content in attachements():
+    for msg_id, name, content in attachments():
         try:
             data = submit_sample(joe, name, content)
         except:
@@ -117,10 +117,10 @@ def main():
     if count:
         print("Submitted {0} samples for analysis.".format(count))
     else:
-        print("No new attachement found.")
+        print("No new attachments found.")
     print("======================================================")
 
-def extract_attachements(msg):
+def extract_attachments(msg):
     """
     Yield name + content
     """
