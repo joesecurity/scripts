@@ -55,14 +55,10 @@ submission_defaults = {
     'hybrid-code-analysis': None,
     # hybrid decompilation
     'hybrid-decompilation': None,
-    # adaptive internet simulation
-    'adaptive-internet-simulation': None,
     # inspect ssl traffic
     'ssl-inspection': None,
     # instrumentation of vba scripts
     'vba-instrumentation': None,
-    # automatically re-submit dropped PE files if they were not executed by the sample
-    'autosubmit-dropped': None,
     # send an e-mail upon completion of the analysis
     'email-notification': None,
 
