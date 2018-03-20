@@ -39,42 +39,9 @@ submission_defaults = {
     'systems': None,
     # comment for an analysis
     'comments': "Submitted by jbxmail.py",
-    # maximum analysis time
-    'analysis-time': None,
-    # password for decrypting office files
-    'office-files-password': None,
-    # country for routing internet through
-    'localized-internet-country': None,
-    # tags
-    'tags': None,
-    # enable internet access during analysis
-    'internet-access': None,
-    # lookup samples in the report cache
-    'report-cache': None,
-    # hybrid code analysis
-    'hybrid-code-analysis': None,
-    # hybrid decompilation
-    'hybrid-decompilation': None,
-    # inspect ssl traffic
-    'ssl-inspection': None,
-    # instrumentation of vba scripts
-    'vba-instrumentation': None,
-    # send an e-mail upon completion of the analysis
-    'email-notification': None,
 
-    ## JOE SANDBOX CLOUD EXCLUSIVE PARAMETERS
-
-    # filter benign samples
-    'smart-filter': None,
-    # select hyper mode for a faster but less thorough analysis
-    'hyper-mode': None,
-    # export the report to Joe Sandbox View
-    'export-to-jbxview': None,
-
-    ## ON PREMISE EXCLUSIVE PARAMETERS
-
-    # priority of submissions
-    'priority': None,
+    # For many more options, see jbxapi.py:
+    # https://github.com/joesecurity/joesandboxcloudapi/blob/master/jbxapi.py
 }
 
 
